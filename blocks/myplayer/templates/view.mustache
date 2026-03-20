@@ -1,0 +1,452 @@
+<div class="player-container">
+    <div class="player-content">
+        {{#menu}}
+            <div class="player-mb-15">
+                <form action="{{formaction}}" method="post">
+                    <input type="hidden" name="userid" value="{{userid}}" />
+                    <input type="hidden" name="userrole" value="{{userrole}}" />
+                    <input type="hidden" name="courseid" value="{{courseid}}" />
+
+                    <label for="audio">Áudio:</label>
+                    <input type="file" id="audio" name="audio">
+
+                    <input type="submit" value="Enviar" />
+                </form>
+            </div>
+        {{/menu}}
+
+        <audio controls>
+            <source src="{{audio}}" type="audio/wav">
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+</div>
+
+{{#js}}
+    var config = {
+        totalDisabled: '2',
+        url: {
+            courseViewURL: fnGetProtocol() + '//' + fnGetHost() + '/course/view.php',
+            modQuizAttemptURL: fnGetProtocol() + '//' + fnGetHost() + '/mod/quiz/attempt.php',
+            questionBankPreviewQuestionPreview: fnGetProtocol() + '//' + fnGetHost() + '/question/bank/previewquestion/preview.php'
+        },
+        buttons: {
+            retornarProva: {
+                display: 'none' //block or none
+            },
+            voltar: {
+                display: 'none' //block or none
+            },
+            finalizarProva: {
+                display: 'none' //block or none
+            }
+        }
+    }
+
+    fnSetHTML(config);
+
+    var audio = document.querySelector('audio');
+
+    if (audio) {
+        audio.removeAttribute('controls');
+        audio.addEventListener('play', fnPlayEvent, false);
+        audio.addEventListener('timeupdate', fnUpdateEvent, false);
+    }
+
+    var btnPlay = document.getElementById("btnPlay");
+
+    var courseViewURL = fnMoodleURLs('course/view');
+    console.log(courseViewURL);
+    console.log(config.url.courseViewURL);
+
+    var modQuizAttemptURL = fnMoodleURLs('mod/quiz/attempt');
+    //console.log(modQuizAttemptURL);
+    //console.log(config.url.modQuizAttemptURL);
+
+    var questionBankPreviewQuestionPreview = fnMoodleURLs('question/bank/previewquestion/preview');
+    //console.log(questionBankPreviewQuestionPreview);
+    //console.log(config.url.questionBankPreviewQuestionPreview);
+
+    //Na Capa de Prova, o player deverá ser executado quantas vezes for necessário
+    if (
+        (courseViewURL == config.url.courseViewURL) ||
+        (questionBankPreviewQuestionPreview == config.url.questionBankPreviewQuestionPreview)
+    ) {
+        btnPlay.onclick = function(e) {
+            e.preventDefault();
+            audio.play();
+        }
+    }
+
+    if (modQuizAttemptURL == config.url.modQuizAttemptURL) {
+        var controlMDL = fnSessionStorage('get', 'controlMDL');
+        var count = document.querySelector('.count');
+
+        fnSetContext();
+
+        btnPlay.onclick = function(e) {
+            e.preventDefault();
+
+            sessionStorage.setItem('resetCountMDL', false);
+        
+            fnSessionStorage('set');
+        
+            audio.play();
+        
+            var total = parseInt(count.textContent) + 1;
+            count.textContent = total;
+        
+            sessionStorage.setItem('countMDL', total);
+        
+            if (total == 1) {
+                this.setAttribute('disabled', controlMDL);
+                this.style.backgroundColor = '#cccccc';
+                sessionStorage.setItem('resetCountMDL', false);
+            }
+
+            if (total == config.totalDisabled) {
+                this.setAttribute('disabled', controlMDL);
+                this.style.backgroundColor = '#cccccc';
+                sessionStorage.setItem('resetCountMDL', true);
+            }
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function(event) {
+        sessionStorage.setItem('finishMDL', false);
+
+        //Botão - Próxima página
+        /*var btnNextPageMDL = document.getElementsByName("next");
+
+        if (btnNextPageMDL) {
+            for (let i = 0; i < btnNextPageMDL.length; i++) {
+                console.log(btnNextPageMDL[i].getAttribute("value"));
+                console.log(btnNextPageMDL[i].getAttribute("id"));
+            
+                if (btnNextPageMDL[i].getAttribute("value") == 'Próxima página') {
+                    btnNextPageMDL[i].onclick = function(e) {
+                        e.preventDefault();
+                        console.log("Sucesso: entrou aqui!");
+                        
+                        var urlNOW = fnGetURL();
+                
+                        sessionStorage.setItem('countMDL', 0);
+                        sessionStorage.setItem('resetCountMDL', false);
+                        sessionStorage.setItem('urlMDL', urlNOW);
+                        sessionStorage.setItem('controlMDL', false);
+                    }
+                }
+            }
+        }*/
+
+        //Botão - Finalizar prova ...
+        var btnFinishMDL = document.body.getElementsByTagName("a");
+        
+        for (let i = 0; i < btnFinishMDL.length; i++) {
+            //console.log(btnFinishMDL[i].textContent);                
+            //console.log(btnFinishMDL[i].innerText);                
+            //console.log(btnFinishMDL[i].text);
+
+            if (btnFinishMDL[i].textContent == 'Finalizar prova ...') {
+                //console.log(btnFinishMDL[i].textContent);
+                //console.log(btnFinishMDL[i].getAttribute("href"));
+                btnFinishMDL[i].style.display = config.buttons.finalizarProva.display;
+                
+                btnFinishMDL[i].setAttribute("id", "btnFinishMDL");
+
+                document.getElementById("btnFinishMDL").onclick = function(e) {
+                    e.preventDefault();
+            
+                    let resposta = confirm("Ao finalizar, não será possível retornar à prova. Deseja continuar?");
+            
+                    if (resposta) {
+                        console.log("Sucesso!");
+                    } else {
+                        console.log("Ação cancelada.");
+                        
+                        var btnNextPageMDL = document.getElementsByName("next");
+
+                        if (btnNextPageMDL) {
+                            for (let i = 0; i < btnNextPageMDL.length; i++) {
+                                if (btnNextPageMDL[i].getAttribute("value") == 'Próxima página') {
+                                    btnNextPageMDL[i].addEventListener("click", stopDefAction, false);
+                                }
+                            }
+                        }
+
+                        sessionStorage.setItem('finishMDL', true);
+
+                        window.location.reload();
+                    }
+                }
+            }
+        }
+
+        //Botão - Retornar à prova
+        var btnReturnMDL = document.body.getElementsByTagName("button");
+        
+        for (let i = 0; i < btnReturnMDL.length; i++) {
+            if (btnReturnMDL[i].textContent == 'Retornar à prova') {
+                //console.log(button[i].textContent);
+                btnReturnMDL[i].style.display = config.buttons.retornarProva.display;
+            }
+        }
+
+        //Botão - Voltar
+        var btnPreviewMDL = document.body.getElementsByTagName("a");
+        
+        for (let i = 0; i < btnPreviewMDL.length; i++) {
+            //console.log(btnPreviewMDL[i].textContent);
+
+            if (btnPreviewMDL[i].textContent == 'Voltar') {
+                btnPreviewMDL[i].style.display = config.buttons.voltar.display;
+            }
+        }
+    });
+
+    function stopDefAction(evt) {
+        evt.preventDefault();
+    }
+
+    //Próxima página
+    var btnNextMoodle = document.getElementById("mod_quiz-next-nav");
+    if (btnNextMoodle) {
+        btnNextMoodle.addEventListener("click", fnNextMoodle);
+    }
+
+    //Enviar tudo e terminar
+    var btnSendFinishMoodle = document.querySelector(".submitbtns > .controls > .btn-finishattempt > #frm-finishattempt > button");
+    if (btnSendFinishMoodle) {
+        btnSendFinishMoodle.addEventListener("click", fnSendFinishMoodle);
+    }
+
+    //Função criada para resolver o bug de não bloquear a execução do player quando executado 2 vezes ao retornar a prova
+    setInterval(refresh, 1000);
+
+    function refresh() {
+        var btnPlay = document.getElementById("btnPlay");
+        var count = document.querySelector('.count');
+
+        if (btnPlay && count) {
+            var countMDL = fnSessionStorage('get', 'countMDL');
+            var controlMDL = fnSessionStorage('get', 'controlMDL');
+            var resetCountMDL = sessionStorage.getItem('resetCountMDL');
+
+            count.textContent = countMDL;
+
+            var time = fnSecToString(audio.currentTime);
+            var timeTotal = fnSecToString(audio.duration);
+
+            if ((countMDL == '1') && (time != '00:00:00' && timeTotal != '00:00:00') && (time == timeTotal)) {
+                btnPlay.removeAttribute('disabled');
+                btnPlay.style.backgroundColor = '#0f6cbf';
+            }
+        
+            if ((countMDL == '2') && (resetCountMDL == 'true')) {
+                btnPlay.setAttribute('disabled', controlMDL);
+            } 
+            
+            if ((countMDL == '2') && (resetCountMDL == 'false')) {
+                count.textContent = 0;
+                btnPlay.removeAttribute('disabled');
+                btnPlay.style.backgroundColor = '#0f6cbf';
+            }
+        }
+    }
+
+    refresh();
+
+    function fnNextMoodle() {
+        var urlNOW = fnGetURL();
+
+        var finishMDL = sessionStorage.getItem('finishMDL');
+
+        if (finishMDL == 'false') {
+            sessionStorage.setItem('countMDL', 0);
+            sessionStorage.setItem('resetCountMDL', false);
+            sessionStorage.setItem('urlMDL', urlNOW);
+            sessionStorage.setItem('controlMDL', false);
+        }
+    }
+
+    function fnSendFinishMoodle() {
+        var urlNOW = fnGetURL();
+
+        sessionStorage.setItem('countMDL', 0);
+        sessionStorage.setItem('resetCountMDL', false);
+        sessionStorage.setItem('urlMDL', urlNOW);
+        sessionStorage.setItem('controlMDL', false);
+    }
+
+    function fnSetHTML(config) {
+        var html = '';
+        var courseViewURL = fnMoodleURLs('course/view');
+        var questionBankPreviewQuestionPreview = fnMoodleURLs('question/bank/previewquestion/preview');
+
+        html += '<div class="player-container">';
+            html += '<div class="player-content">';
+                html += '<div class="player-content-item">';
+                    html += '<div class="player-timer">';
+                        html += '<span id="time">00:00:00</span> / <span id="timeTotal">00:00:00</span>';
+                    html += '</div>';
+
+                    html += '&nbsp;&nbsp;';
+
+                    html += '<button id="btnPlay" class="player-btn-play">';
+                        html += '<i class="fa fa-play"></i>';
+                    html += '</button>';
+                html += '</div>';
+
+                html += '<progress id="progressBar" max="0" value="0" class="player-progressbar"></progress>';
+                
+                html += '<div class="player-counter">';
+                    html += 'Executado <span class="count">0</span> vez(es)';
+                html += '</div>';
+            html += '</div>';
+        html += '</div>';
+
+        var div = document.createElement('div');
+        div.innerHTML = html;
+        
+        var audio = document.querySelector('audio');
+
+        if (audio) {
+            audio.parentElement.insertBefore(div.firstChild, audio);
+        }
+    }
+
+    function fnSetContext() {
+        var btnPlay = document.getElementById("btnPlay");
+        var count = document.querySelector('.count');
+        
+        if (count && btnPlay) {
+            var urlNOW = fnGetURL();
+            var countMDL = fnSessionStorage('get', 'countMDL');
+            var urlMDL = fnSessionStorage('get', 'urlMDL');
+            var controlMDL = fnSessionStorage('get', 'controlMDL');
+        
+            if (!countMDL || (countMDL == '0')) {
+                sessionStorage.setItem('countMDL', 0);
+            }
+        
+            sessionStorage.setItem('urlMDL', urlNOW);
+
+            var resetCountMDL = sessionStorage.getItem('resetCountMDL');
+
+            if ((controlMDL == 'true') && (countMDL == '1')) {
+                count.textContent = countMDL;
+            } else if ((controlMDL == 'true') && (countMDL == '2') && (resetCountMDL == 'true')) {
+                btnPlay.setAttribute('disabled', controlMDL);
+                count.textContent = countMDL;
+            } else if ((controlMDL == 'true') && (countMDL == '2') && (resetCountMDL == 'false')) {
+                btnPlay.removeAttribute('disabled');
+                count.textContent = 0;
+            }
+        }
+    }
+
+    function fnPlayEvent() {
+        document.getElementById('time').innerHTML = fnSecToString(audio.currentTime);
+        document.getElementById('timeTotal').innerHTML = fnSecToString(audio.duration);
+        document.getElementById('progressBar').max = audio.duration;
+        document.getElementById('progressBar').value = audio.currentTime;
+    }
+
+    function fnUpdateEvent() {
+        document.getElementById('time').innerHTML = fnSecToString(audio.currentTime);
+        document.getElementById('progressBar').value = audio.currentTime;
+    }
+
+    function fnSecToString(secNum) {
+        secNum = Math.floor(secNum);
+
+        var time = Math.floor(secNum / 3600);
+        var min = Math.floor((secNum - (time * 3600)) / 60);
+        var seg = secNum - (time * 3600) - (min * 60);
+
+        if (time < 10) {
+            time = "0" + time;
+        }
+
+        if (min < 10) {
+            min = "0" + min;
+        }
+
+        if (seg < 10) {
+            seg = "0" + seg;
+        }
+
+        var result = time + ':' + min + ':' + seg;
+
+        return result;
+    }
+
+    function fnGetURL() {
+        var url = window.location.href;
+        return url;
+    }
+
+    function fnGetHost() {
+        var host = window.location.host;
+        return host;
+    }
+
+    function fnGetHostname() {
+        var hostname = window.location.hostname;
+        return hostname;
+    }
+
+    function fnGetProtocol() {
+        var protocol = window.location.protocol;
+        return protocol;
+    }
+
+    function fnMoodleURLs(str) {
+        var protocol = fnGetProtocol();
+        var url = fnGetURL();
+
+        var result = '';
+
+        switch (str) {
+            case 'course/view': 
+                //result = url.substring(0, 41); //http://cidexepl.eb.mil.br/course/view.php?id=
+                result = url.substring(0, 32); //http://localhost/course/view.php?id=
+                break;
+            case 'mod/quiz/attempt': //http://cidexepl.eb.mil.br/mod/quiz/attempt.php
+                result = url.substring(0, 46);
+                break;
+            case 'question/bank/previewquestion/preview': //http://cidexepl.eb.mil.br/question/bank/previewquestion/preview.php
+                result = url.substring(0, 67);
+                break;
+        }
+
+        return result;
+    }
+
+    function fnSessionStorage(type, element) {
+        var url = fnGetURL();
+
+        if (type == 'set') {
+            sessionStorage.setItem('urlMDL', url);
+            sessionStorage.setItem('controlMDL', true);
+        }
+
+        if (type == 'get') {
+            var result = '';
+
+            if (element == 'countMDL') {
+                result = sessionStorage.getItem('countMDL');
+            }
+
+            if (element == 'urlMDL') {
+                result = sessionStorage.getItem('urlMDL');
+            }
+
+            if (element == 'controlMDL') {
+                result = sessionStorage.getItem('controlMDL');
+            }
+
+            return result;
+        }
+    }
+{{/js}}

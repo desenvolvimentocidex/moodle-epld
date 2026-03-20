@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <div class="player-container">
+            <div class="player-content">
+                <form action="{{formaction}}" method="post">
+                    <input type="hidden" name="userid" value="{{userid}}" />
+                    <input type="hidden" name="courseid" value="{{courseid}}" />
+
+                    <label for="audio">Áudio:</label>
+                    <input type="file" id="audio" name="audio">
+
+                    <input type="submit" value="Enviar" />
+                </form>
+
+                <br>
+                
+                <div class="player-container">
+                    <div class="player-content">
+                        <div class="player-content-item">
+                            <div class="player-timer">
+                                <span id="time">00:00:00</span> / <span id="timeTotal">00:00:00</span>
+                            </div>
+
+                            &nbsp;&nbsp;
+
+                            <button id="btnPlay" class="player-btn-play">
+                                <i class="fa fa-play"></i>
+                            </button>
+                        </div>
+                        
+                        <progress id="progressBar" max="0" value="0" class="player-progressbar"></progress>
+                        
+                        <div class="player-counter">
+                            Executado <span class="count">0</span> vez(es)
+                        </div>
+                    </div>
+            
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
